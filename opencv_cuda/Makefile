@@ -1,6 +1,8 @@
 CC = nvcc
+DIALECT = gnu18 # be explicit
 OPENCV = `pkg-config opencv4 --cflags --libs`
-CFLAGS = $(OPENCV) --compiler-options -Wall
+GCC_OPTIONS = --compiler-options -Wall --compiler-options -std=$(DIALECT)
+CFLAGS = $(OPENCV) $(GCC_OPTIONS)
 FILE = sobel
 TEST_IMG = ../test_data/huge.jpg
 
