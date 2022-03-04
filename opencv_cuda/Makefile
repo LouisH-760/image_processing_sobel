@@ -13,4 +13,4 @@ start:
 test: build start
 
 clean:
-	rm sobel
+	rm -f sobel
