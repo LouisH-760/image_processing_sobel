@@ -7,4 +7,4 @@
 *.fatbin
 
 __pycache__
-
+*.pyc
