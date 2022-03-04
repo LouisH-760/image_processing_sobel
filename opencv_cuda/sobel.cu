@@ -22,21 +22,23 @@ int showAndSave(Mat sobel)
     return waitKey(0);
 }
 
-int main(int argc, char** argv )
-{
+Mat loadimage(int argc, char** argv) {
+    Mat image;
     if ( argc != 2 )
     {
         printf("usage: DisplayImage.out <Image_Path>\n");
-        return -1;
+        return image;
     }
-    Mat image;
     image = imread( argv[1], IMREAD_GRAYSCALE);
     if ( !image.data )
     {
         printf("No image data \n");
-        return -1;
+        return image;
     }
-    showAndSave(image);
-    waitKey(0);
+    return image;
+}
+
+int main(int argc, char** argv ) {
+    showAndSave(loadimage(argc, argv));
     return 0;
 }
