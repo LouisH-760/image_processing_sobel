@@ -10,6 +10,7 @@
 #define DISPLAY_SCALE 0.2
 
 #define BLOCK_SIZE 32
+#define THREAD_WORK 100
 
 
 using namespace cv;
@@ -39,22 +40,24 @@ Mat loadImage(int argc, char** argv) {
 }
 
 void matrixToArray(Mat matrix, int* arr, int size) {
-    for(int i = 0; i < matrix.cols; i++) {
-        for(int j = 0; j < matrix.rows; j++) {
-            if(i*j < size - 1) {
-                *(arr + i*j) = (int) matrix.at<uchar>(j, i);
-            }
+    int pos;
+    int row = matrix.rows;
+    int col = matrix.cols;
+    for(int i = 0; i < matrix.rows; i++) {
+        for(int j = 0; j < matrix.cols; j++) {
+            pos = i * col + j;
+            *(arr + pos) = (int) matrix.at<uchar>(i, j);
         }
     }
 }
 
 Mat arrayToMatrix(int* arr, int size, int cols, int rows) {
+    int pos;
     Mat out(rows, cols, CV_8UC1);
-    for(int i = 0; i < cols; i++) {
-        for(int j = 0; j < rows; j++) {
-            if(i*j < size - 1) {
-                out.at<uchar>(j, i) = (unsigned char) *(arr + i*j);
-            }
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            pos = i * cols + j;
+            out.at<uchar>(i, j) = (unsigned char) *(arr + pos);
         }
     }
     return out;
@@ -62,28 +65,25 @@ Mat arrayToMatrix(int* arr, int size, int cols, int rows) {
 
 __global__ void sobelNaive(int *img, int *output, int size) {
     int index = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    if(index < size) {
-        int val = *(img + index);
-        *(output + index) = val;
+    for(int i = 0; i < THREAD_WORK; i++) {
+        if(index + i < size) {
+            int val = *(img + index + i);
+            *(output + index + i) = val;
+        }
     }
 }
 
 int main(int argc, char** argv ) {
-    printf("begin");
     Mat orig = loadImage(argc, argv);
-    printf("loadimg");
     const int dims = orig.cols * orig.rows;
-    const int blocks = (int) ceil(dims / BLOCK_SIZE);
+    const int blocks = (int) ceil(dims);
     // with a big image, dims > size_t. Can't use arrays :(
     int *img = (int *) calloc(dims, sizeof(int));
     int *remoteImg, *remoteOutput, *output;
-    printf("vars");
     cudaMalloc(&remoteImg, sizeof(int) * dims);
     cudaMalloc(&remoteOutput, sizeof(int) *  dims);
-    printf("allocs");
     // since we're on GPU, we don't want the Mat type but an int array, if possible
     matrixToArray(orig, img, dims);
-    printf("init");
 
     cudaMemcpy(remoteImg, img,  dims, cudaMemcpyHostToDevice);
     free(img);
