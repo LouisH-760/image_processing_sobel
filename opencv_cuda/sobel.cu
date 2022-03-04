@@ -1,6 +1,10 @@
 #include <stdio.h>
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+
 using namespace cv;
+
 int main(int argc, char** argv )
 {
     if ( argc != 2 )
@@ -9,7 +13,7 @@ int main(int argc, char** argv )
         return -1;
     }
     Mat image;
-    image = imread( argv[1], 1 );
+    image = imread( argv[1], IMREAD_GRAYSCALE);
     if ( !image.data )
     {
         printf("No image data \n");
