@@ -39,15 +39,23 @@ Mat loadImage(int argc, char** argv) {
 }
 
 void matrixToArray(Mat matrix, int* arr, int size) {
-    for(int i = 0; i < size; i++) {
-        *(arr + i) = (int) matrix.at<uchar>(i%matrix.cols, (int) round(i/matrix.cols));
+    for(int i = 0; i < matrix.cols; i++) {
+        for(int j = 0; j < matrix.rows; j++) {
+            if(i*j < size - 1) {
+                *(arr + i*j) = (int) matrix.at<uchar>(j, i);
+            }
+        }
     }
 }
 
-Mat arrayToMatrix(int* arr, int size, int w, int h) {
-    Mat out(w, h, CV_8UC1);
-    for(int i = 0; i < size; i++) {
-        out.at<uchar>(i%w, (int) round(i/w)) = (unsigned char) *(arr + i);
+Mat arrayToMatrix(int* arr, int size, int cols, int rows) {
+    Mat out(rows, cols, CV_8UC1);
+    for(int i = 0; i < cols; i++) {
+        for(int j = 0; j < rows; j++) {
+            if(i*j < size - 1) {
+                out.at<uchar>(j, i) = (unsigned char) *(arr + i*j);
+            }
+        }
     }
     return out;
 }
@@ -67,27 +75,27 @@ int main(int argc, char** argv ) {
     const int dims = orig.cols * orig.rows;
     const int blocks = (int) ceil(dims / BLOCK_SIZE);
     // with a big image, dims > size_t. Can't use arrays :(
-    int *img = (int *) malloc(dims * sizeof(int));
+    int *img = (int *) calloc(dims, sizeof(int));
     int *remoteImg, *remoteOutput, *output;
     printf("vars");
-    cudaMalloc(&remoteImg, sizeof(int) * orig.total());
-    cudaMalloc(&remoteOutput, sizeof(int) *  orig.total());
+    cudaMalloc(&remoteImg, sizeof(int) * dims);
+    cudaMalloc(&remoteOutput, sizeof(int) *  dims);
     printf("allocs");
     // since we're on GPU, we don't want the Mat type but an int array, if possible
-    matrixToArray(orig, img,  orig.total());
+    matrixToArray(orig, img, dims);
     printf("init");
 
-    cudaMemcpy(remoteImg, img,  orig.total(), cudaMemcpyHostToDevice);
+    cudaMemcpy(remoteImg, img,  dims, cudaMemcpyHostToDevice);
     free(img);
 
-    sobelNaive<<<blocks, BLOCK_SIZE>>>(remoteImg, remoteOutput,  orig.total());
+    sobelNaive<<<blocks, BLOCK_SIZE>>>(remoteImg, remoteOutput,  dims);
 
     cudaDeviceSynchronize();
     cudaFree(remoteImg);
     output = (int *) malloc( dims * (sizeof(int)));
-    cudaMemcpy(output, remoteOutput, sizeof(int) *  orig.total(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(output, remoteOutput, sizeof(int) *  dims, cudaMemcpyDeviceToHost);
 
-    showAndSave(arrayToMatrix(output, orig.total(), orig.rows, orig.cols));
+    showAndSave(arrayToMatrix(output, dims, orig.cols, orig.rows));
     
     free(output);
     cudaFree(remoteOutput);
