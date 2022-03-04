@@ -6,3 +6,5 @@
 *.cubin
 *.fatbin
 
+__pycache__
+
