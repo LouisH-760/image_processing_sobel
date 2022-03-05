@@ -9,7 +9,7 @@
 #define OUTNAME "result.png"
 #define DISPLAY_SCALE 0.2
 
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 1
 #define THREAD_WORK 100
 
 
@@ -63,20 +63,18 @@ Mat arrayToMatrix(int* arr, int size, int cols, int rows) {
     return out;
 }
 
-__global__ void sobelNaive(int *img, int *output, int size) {
-    int index = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    for(int i = 0; i < THREAD_WORK; i++) {
-        if(index + i < size) {
-            int val = *(img + index + i);
-            *(output + index + i) = val;
-        }
+__global__ void sobelNaive(int *img, int *output, int size, int offset) {
+    int index = (blockIdx.x * BLOCK_SIZE + threadIdx.x) + offset;
+    if(index < size) {
+        int val = *(img + index);
+        *(output + index) = val;
     }
 }
 
 int main(int argc, char** argv ) {
     Mat orig = loadImage(argc, argv);
     const int dims = orig.cols * orig.rows;
-    const int blocks = (int) ceil(dims);
+    int blocks;
     // with a big image, dims > size_t. Can't use arrays :(
     int *img = (int *) calloc(dims, sizeof(int));
     int *remoteImg, *remoteOutput, *output;
@@ -86,18 +84,21 @@ int main(int argc, char** argv ) {
     matrixToArray(orig, img, dims);
 
     cudaMemcpy(remoteImg, img,  dims, cudaMemcpyHostToDevice);
-    free(img);
-
-    sobelNaive<<<blocks, BLOCK_SIZE>>>(remoteImg, remoteOutput,  dims);
-
-    cudaDeviceSynchronize();
-    cudaFree(remoteImg);
+    // showAndSave(arrayToMatrix(img, dims, orig.cols, orig.rows));
+    
+    for(int i = 0; i < orig.rows; i++) {
+        blocks = (int) ceil(orig.cols / BLOCK_SIZE);
+        sobelNaive<<<blocks, BLOCK_SIZE>>>(remoteImg, remoteOutput, dims, i * orig.cols);
+        cudaDeviceSynchronize();
+    }
+    
     output = (int *) malloc( dims * (sizeof(int)));
     cudaMemcpy(output, remoteOutput, sizeof(int) *  dims, cudaMemcpyDeviceToHost);
 
     showAndSave(arrayToMatrix(output, dims, orig.cols, orig.rows));
     
-    free(output);
-    cudaFree(remoteOutput);
+    
+    free(output); free(img);
+    cudaFree(remoteOutput); cudaFree(remoteImg);
     return 0;
 }
