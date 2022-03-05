@@ -18,7 +18,7 @@ start:
 test: build start
 
 debugbuild: clean
-	$(CC) $(DEBUG_FLAG) $(CFLAGS) $(FILE).cu -o $(FILE)
+	$(CC) $(DEBUG_FLAG) $(CFLAGS) $(FILE).cpp -o $(FILE) $(OPENCV)
 
 debug: debugbuild
 	$(DEBUGGER) $(DEBUGGER_ARGS)

@@ -1,5 +1,5 @@
 CC = nvcc
-DIALECT = gnu18 # be explicit
+DIALECT = c++17 # be explicit
 OPENCV = `pkg-config opencv4 --cflags --libs`
 GCC_OPTIONS = --compiler-options -Wall --compiler-options -std=$(DIALECT)
 CFLAGS = $(OPENCV) $(GCC_OPTIONS)
