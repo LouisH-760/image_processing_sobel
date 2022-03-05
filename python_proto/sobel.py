@@ -30,7 +30,7 @@ def sobel(img):
 
 if __name__ == "__main__":
   # start from root of the repository
-  file = "./test_data/small.jpg"
+  file = "./test_data/huge.jpg"
   img = loadfile(file)
   out = sobel(img)
   storefile("out.png", out)
