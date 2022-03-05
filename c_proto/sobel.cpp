@@ -39,7 +39,38 @@ Mat loadImage(int argc, char** argv) {
 }
 
 int main(int argc, char** argv ) {
+    int xsob[3][3] = {
+        {-1, 0, 1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
+
+    int ysob[3][3] = {
+        {-1, -2, -1},
+        {0, 0, 0},
+        {1, 2, 1}
+    };
+
     Mat orig = loadImage(argc, argv);
-    showAndSave(orig);
+    Mat out(orig.rows, orig.cols, CV_8UC1);
+    unsigned short int result, mx, my;
+    int ver, hor;
+    for(auto row = 1; row < orig.rows - 1; row++) {
+        for(auto col = 1; col < orig.cols - 1; col++) {
+            ver = 0;
+            hor = 0;
+            for(auto x = 0; x < 3; x++) {
+                for(auto y = 0; y < 3; y++) {
+                    mx = col - 1 + x;
+                    my = row - 1 + y;
+                    ver += xsob[x][y] * (int) orig.at<uchar>(my, mx);
+                    hor += ysob[x][y] * (int) orig.at<uchar>(my, mx);
+                }
+            }
+            result = (unsigned short int) round(sqrt(ver * ver + hor * hor));
+            out.at<uchar>(row, col) = (uchar) result;
+        }
+    }
+    showAndSave(out);
     return 0;
 }
