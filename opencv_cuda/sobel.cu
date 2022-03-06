@@ -39,25 +39,19 @@ Mat loadImage(int argc, char** argv) {
     return image;
 }
 
-void matrixToArray(Mat matrix, int* arr, int size) {
-    int pos;
-    int row = matrix.rows;
-    int col = matrix.cols;
-    for(int i = 0; i < matrix.rows; i++) {
-        for(int j = 0; j < matrix.cols; j++) {
-            pos = i * col + j;
-            *(arr + pos) = (int) matrix.at<uchar>(i, j);
+void matrixToArray(Mat matrix, uchar* arr, unsigned short int cols, unsigned short int rows) {
+    for(auto row = 0; row < rows; row++) {
+        for(auto col = 0; col < cols; col++) {
+            arr[row*cols+col] = matrix.at<uchar>(row, col);
         }
     }
 }
 
-Mat arrayToMatrix(int* arr, int size, int cols, int rows) {
-    int pos;
+Mat arrayToMatrix(uchar* arr, unsigned short int cols, unsigned short int rows) {
     Mat out(rows, cols, CV_8UC1);
-    for(int i = 0; i < rows; i++) {
-        for(int j = 0; j < cols; j++) {
-            pos = i * cols + j;
-            out.at<uchar>(i, j) = (unsigned char) *(arr + pos);
+    for(auto row = 0; row < rows; row++) {
+        for(auto col = 0; col < cols; col++) {
+            out.at<uchar>(row, col) = arr[row*cols+col];
         }
     }
     return out;
@@ -73,32 +67,13 @@ __global__ void sobelNaive(int *img, int *output, int size, int offset) {
 
 int main(int argc, char** argv ) {
     Mat orig = loadImage(argc, argv);
-    const int dims = orig.cols * orig.rows;
-    int blocks;
-    // with a big image, dims > size_t. Can't use arrays :(
-    int *img = (int *) calloc(dims, sizeof(int));
-    int *remoteImg, *remoteOutput, *output;
-    cudaMalloc(&remoteImg, sizeof(int) * dims);
-    cudaMalloc(&remoteOutput, sizeof(int) *  dims);
-    // since we're on GPU, we don't want the Mat type but an int array, if possible
-    matrixToArray(orig, img, dims);
-
-    cudaMemcpy(remoteImg, img,  dims, cudaMemcpyHostToDevice);
-    // showAndSave(arrayToMatrix(img, dims, orig.cols, orig.rows));
-    
-    for(int i = 0; i < orig.rows; i++) {
-        blocks = (int) ceil(orig.cols / BLOCK_SIZE);
-        sobelNaive<<<blocks, BLOCK_SIZE>>>(remoteImg, remoteOutput, dims, i * orig.cols);
-        cudaDeviceSynchronize();
-    }
-    
-    output = (int *) malloc( dims * (sizeof(int)));
-    cudaMemcpy(output, remoteOutput, sizeof(int) *  dims, cudaMemcpyDeviceToHost);
-
-    showAndSave(arrayToMatrix(output, dims, orig.cols, orig.rows));
-    
-    
-    free(output); free(img);
-    cudaFree(remoteOutput); cudaFree(remoteImg);
+    // don't need more than an unsigned short int for now because bracket syntax is used for arrays
+    // max image size: 65535 * 65535
+    const unsigned short int cols = orig.cols;
+    const unsigned short int rows = orig.rows;
+    uchar (*image) = (uchar (*)) calloc(cols*rows, sizeof(uchar));
+    matrixToArray(orig, image, cols, rows);
+    showAndSave(arrayToMatrix(image, cols, rows));
+    free(image);
     return 0;
 }
