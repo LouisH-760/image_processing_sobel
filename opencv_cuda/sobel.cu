@@ -7,7 +7,7 @@
 #define WINDOWFLAGS WINDOW_NORMAL|WINDOW_KEEPRATIO|WINDOW_GUI_EXPANDED
 #define WNAME "Sobel"
 #define OUTNAME "result.png"
-#define DISPLAY_SCALE 0.2
+#define DISPLAY_SCALE 0.3
 
 #define BLOCKS 32000
 #define THREADS 1024
@@ -72,7 +72,7 @@ int main(int argc, char** argv ) {
     const unsigned int blocks = (unsigned int) ceil((cols * rows) / THREADS);
     uchar *rImage, *rOutput;
 
-    auto image = (uchar *) calloc(cols*rows, sizeof(uchar));
+    auto image = (uchar *) malloc(size);
 
     matrixToArray(orig, image, cols, rows);
 
