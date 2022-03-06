@@ -67,12 +67,13 @@ __global__ void sobelNaive(int *img, int *output, int size, int offset) {
 
 int main(int argc, char** argv ) {
     Mat orig = loadImage(argc, argv);
-    // don't need more than an unsigned short int for now because bracket syntax is used for arrays
+    // don't need more than an unsigned short int, assuming realistic images
     // max image size: 65535 * 65535
     const unsigned short int cols = orig.cols;
     const unsigned short int rows = orig.rows;
-    uchar (*image) = (uchar (*)) calloc(cols*rows, sizeof(uchar));
+    uchar (*image) = (uchar *) calloc(cols*rows, sizeof(uchar));
     matrixToArray(orig, image, cols, rows);
+    orig.release();
     showAndSave(arrayToMatrix(image, cols, rows));
     free(image);
     return 0;
