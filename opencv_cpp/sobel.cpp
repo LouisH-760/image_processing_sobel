@@ -38,7 +38,7 @@ Mat loadImage(int argc, char** argv) {
     return image;
 }
 
-int main(int argc, char** argv ) {
+Mat sobel(Mat orig) {
     int xsob[3][3] = {
         {-1, 0, 1},
         {-2, 0, 2},
@@ -50,8 +50,6 @@ int main(int argc, char** argv ) {
         {0, 0, 0},
         {1, 2, 1}
     };
-
-    Mat orig = loadImage(argc, argv);
     Mat out(orig.rows, orig.cols, CV_8UC1);
     unsigned short int result, mx, my;
     int ver, hor;
@@ -71,6 +69,12 @@ int main(int argc, char** argv ) {
             out.at<uchar>(row, col) = (uchar) result;
         }
     }
+    return out;
+}
+
+int main(int argc, char** argv ) {
+    Mat orig = loadImage(argc, argv);
+    Mat out = sobel(orig);
     showAndSave(out);
     return 0;
 }
