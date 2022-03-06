@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
@@ -38,7 +39,9 @@ Mat loadImage(int argc, char** argv) {
     return image;
 }
 
-Mat sobel(Mat orig) {
+Mat sobel(Mat orig, double* time) {
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     int xsob[3][3] = {
         {-1, 0, 1},
         {-2, 0, 2},
@@ -69,12 +72,16 @@ Mat sobel(Mat orig) {
             out.at<uchar>(row, col) = (uchar) result;
         }
     }
+    gettimeofday(&end, NULL);
+    *(time) = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
     return out;
 }
 
 int main(int argc, char** argv ) {
     Mat orig = loadImage(argc, argv);
-    Mat out = sobel(orig);
+    double time;
+    Mat out = sobel(orig, &time);
+    printf("Sobel function exec time: %f milliseconds\n", time);
     showAndSave(out);
     return 0;
 }
