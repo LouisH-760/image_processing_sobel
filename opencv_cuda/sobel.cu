@@ -10,7 +10,6 @@
 #define OUTNAME "result.png"
 #define DISPLAY_SCALE 0.3
 
-#define BLOCKS 32000
 #define THREADS 1024
 
 
@@ -88,7 +87,7 @@ __global__ void sobelNaive(uchar *img, uchar *output, unsigned short int cols, u
 }
 
 int main(int argc, char** argv ) {
-    struct timeval start, end;
+    struct timespec start, end;
     Mat orig = loadImage(argc, argv);
     // don't need more than an unsigned short int, assuming realistic images
     // max image size: 65535 * 65535
@@ -109,12 +108,13 @@ int main(int argc, char** argv ) {
 
     cudaMemcpy(rImage, image, size, cudaMemcpyHostToDevice);
 
-    gettimeofday(&start, NULL);
+    clock_gettime(CLOCK_REALTIME, &start);
     sobelNaive<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
     cudaDeviceSynchronize();
-    gettimeofday(&end, NULL);
-    double time = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
-    printf("Sobel function exec time: %f milliseconds\n", time);
+    clock_gettime(CLOCK_REALTIME, &end);
+    double time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+    double ms = time / 1000;
+    printf("Sobel function exec time: %f microseconds (%f milliseconds)\n", time, ms);
     cudaFree(rImage);
 
     cudaMemcpy(image, rOutput, size, cudaMemcpyDeviceToHost);

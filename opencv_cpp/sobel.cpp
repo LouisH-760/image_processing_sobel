@@ -40,8 +40,8 @@ Mat loadImage(int argc, char** argv) {
 }
 
 Mat sobel(Mat orig, double* time) {
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
+    struct timespec start, end;
+    clock_gettime(CLOCK_REALTIME, &start);
     int xsob[3][3] = {
         {-1, 0, 1},
         {-2, 0, 2},
@@ -72,8 +72,8 @@ Mat sobel(Mat orig, double* time) {
             out.at<uchar>(row, col) = (uchar) result;
         }
     }
-    gettimeofday(&end, NULL);
-    *(time) = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
+    clock_gettime(CLOCK_REALTIME, &end);
+    *(time) = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
     return out;
 }
 
@@ -81,7 +81,8 @@ int main(int argc, char** argv ) {
     Mat orig = loadImage(argc, argv);
     double time;
     Mat out = sobel(orig, &time);
-    printf("Sobel function exec time: %f milliseconds\n", time);
+    double ms = time / 1000;
+    printf("Sobel function exec time: %f microseconds (%f milliseconds)\n", time, ms);
     showAndSave(out);
     return 0;
 }
