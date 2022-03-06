@@ -8,6 +8,8 @@ TEST_IMG = ../test_data/huge.jpg
 DEBUGGER = gdb
 DEBUGGER_ARGS = --args $(FILE) $(TEST_IMG)
 EXT = .cu
+PROFILER = ncu
+PROFILER_OPTIONS = --target-processes all --open-in-ui
 
 build: clean
 	$(CC) $(CFLAGS)
@@ -22,6 +24,9 @@ debugbuild: clean
 
 debug: debugbuild
 	$(DEBUGGER) $(DEBUGGER_ARGS)
+
+profile: build
+	$(PROFILER) $(PROFILER_OPTIONS) $(FILE) $(TEST_IMG)
 
 clean:
 	rm -f $(FILE)
