@@ -85,12 +85,14 @@ int main(int argc, char** argv ) {
 
     sobelNaive<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
     cudaDeviceSynchronize();
+    cudaFree(rImage);
 
     cudaMemcpy(image, rOutput, size, cudaMemcpyDeviceToHost);
 
+    cudaFree(rOutput);
+
     showAndSave(arrayToMatrix(image, cols, rows));
 
-    cudaFree(rImage); cudaFree(rOutput);
     free(image);
     return 0;
 }
