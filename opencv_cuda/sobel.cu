@@ -58,8 +58,32 @@ Mat arrayToMatrix(uchar* arr, unsigned short int cols, unsigned short int rows) 
 }
 
 __global__ void sobelNaive(uchar *img, uchar *output, unsigned short int cols, unsigned short int rows) {
-    unsigned short int index = blockIdx.x * THREADS + threadIdx.x;
-    output[index] = img[index];
+    int index = blockIdx.x * THREADS + threadIdx.x;
+    int currCol = index % cols;
+    int currRow = (int) truncf(index / cols);
+    bool usable = (currCol % (cols - 1)) != 0 && (currRow % (rows - 1)) != 0;
+    int xsob[3][3] = {
+        {-1, 0, 1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
+
+    int ysob[3][3] = {
+        {-1, -2, -1},
+        {0, 0, 0},
+        {1, 2, 1}
+    };
+    if(usable) {
+        int x = 0;
+        int y = 0;
+        for(auto i = -1; i < 2; i++) {
+            for(auto j = -1; j < 2; j++) {
+                x += xsob[i + 1][j + 1] * img[(i + currRow) * cols + (j + currCol)];
+                y += ysob[i + 1][j + 1] * img[(i + currRow) * cols + (j + currCol)];
+            }
+        }
+        output[index] = (int) roundf(sqrtf(x*x + y*y));
+    }
 }
 
 int main(int argc, char** argv ) {
