@@ -9,8 +9,8 @@
 #define OUTNAME "result.png"
 #define DISPLAY_SCALE 0.2
 
-#define BLOCK_SIZE 1
-#define THREAD_WORK 100
+#define BLOCKS 32000
+#define THREADS 1024
 
 
 using namespace cv;
@@ -57,12 +57,9 @@ Mat arrayToMatrix(uchar* arr, unsigned short int cols, unsigned short int rows) 
     return out;
 }
 
-__global__ void sobelNaive(int *img, int *output, int size, int offset) {
-    int index = (blockIdx.x * BLOCK_SIZE + threadIdx.x) + offset;
-    if(index < size) {
-        int val = *(img + index);
-        *(output + index) = val;
-    }
+__global__ void sobelNaive(uchar *img, uchar *output, unsigned short int cols, unsigned short int rows) {
+    unsigned short int index = blockIdx.x * THREADS + threadIdx.x;
+    output[index] = img[index];
 }
 
 int main(int argc, char** argv ) {
@@ -71,10 +68,29 @@ int main(int argc, char** argv ) {
     // max image size: 65535 * 65535
     const unsigned short int cols = orig.cols;
     const unsigned short int rows = orig.rows;
-    uchar (*image) = (uchar *) calloc(cols*rows, sizeof(uchar));
+    const unsigned int size = cols*rows*sizeof(char);
+    const unsigned int blocks = (unsigned int) ceil((cols * rows) / THREADS);
+    uchar *rImage, *rOutput;
+
+    auto image = (uchar *) calloc(cols*rows, sizeof(uchar));
+
     matrixToArray(orig, image, cols, rows);
+
     orig.release();
+
+    cudaMalloc(&rImage, size);
+    cudaMalloc(&rOutput, size);
+
+    cudaMemcpy(rImage, image, size, cudaMemcpyHostToDevice);
+
+    sobelNaive<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(image, rOutput, size, cudaMemcpyDeviceToHost);
+
     showAndSave(arrayToMatrix(image, cols, rows));
+
+    cudaFree(rImage); cudaFree(rOutput);
     free(image);
     return 0;
 }
