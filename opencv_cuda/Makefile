@@ -30,3 +30,4 @@ profile: build
 
 clean:
 	rm -f $(FILE)
+	rm -f result.png
