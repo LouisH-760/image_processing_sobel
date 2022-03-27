@@ -124,6 +124,46 @@ __global__ void sobelLessNaive(uchar *img, uchar *output, unsigned short int col
     }
 }
 
+__global__ void sobelNaiveCache(uchar *img, uchar *output, unsigned short int cols, unsigned short int rows)
+{
+    int index = blockIdx.x * THREADS + threadIdx.x;
+    int currCol = index % cols;
+    int currRow = (int)truncf(index / cols);
+    bool usable = (currCol % (cols - 1)) != 0 && (currRow % (rows - 1)) != 0;
+    if (usable)
+    {
+
+        uchar commonpixels[] = {
+            img[(-1 + currRow) * cols + (-1 + currCol)], // 0
+            img[(-1 + currRow) * cols + (currCol)], // 1
+            img[(-1 + currRow) * cols + (1 + currCol)], // 2
+            img[(currRow) * cols + (-1 + currCol)], // 3
+            img[(currRow) * cols + (1 + currCol)], // 4
+            img[(1 + currRow) * cols + (-1 + currCol)], // 5
+            img[(1 + currRow) * cols + (currCol)], // 6
+            img[(1 + currRow) * cols + (1 + currCol)] // 7
+
+        };
+        int x = 0;
+        int y = 0;
+        // auto generayed for x
+        x += -1 * commonpixels[0] +
+        1 * commonpixels[2] +
+        -2 * commonpixels[3] +
+        2 * commonpixels[4] +
+        -1 * commonpixels[5] +
+        1 * commonpixels[7];
+        // auto generayed for y
+        y += -1 * commonpixels[0] +
+        -2 * commonpixels[1] +
+        -1 * commonpixels[2] +
+        1 * commonpixels[5] +
+        2 * commonpixels[6] +
+        1 * commonpixels[7];
+        output[index] = (int)roundf(sqrtf(x * x + y * y));
+    }
+}
+
 int main(int argc, char **argv)
 {
     struct timespec start, end;
