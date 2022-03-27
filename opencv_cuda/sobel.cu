@@ -106,14 +106,13 @@ __global__ void sobelLessNaive(uchar *img, uchar *output, unsigned short int col
     {
         int x = 0;
         int y = 0;
-        // auto generayed for x
         x += -1 * img[(-1 + currRow) * cols + (-1 + currCol)] +
         1 * img[(-1 + currRow) * cols + (1 + currCol)] +
         -2 * img[(currRow) * cols + (-1 + currCol)] +
         2 * img[(currRow) * cols + (1 + currCol)] +
         -1 * img[(1 + currRow) * cols + (-1 + currCol)] +
         1 * img[(1 + currRow) * cols + (1 + currCol)];
-        // auto generayed for y
+
         y += -1 * img[(-1 + currRow) * cols + (-1 + currCol)] +
         -2 * img[(-1 + currRow) * cols + (currCol)] +
         -1 * img[(-1 + currRow) * cols + (1 + currCol)] +
@@ -146,14 +145,14 @@ __global__ void sobelNaiveCache(uchar *img, uchar *output, unsigned short int co
         };
         int x = 0;
         int y = 0;
-        // auto generayed for x
+
         x += -1 * commonpixels[0] +
         1 * commonpixels[2] +
         -2 * commonpixels[3] +
         2 * commonpixels[4] +
         -1 * commonpixels[5] +
         1 * commonpixels[7];
-        // auto generayed for y
+        
         y += -1 * commonpixels[0] +
         -2 * commonpixels[1] +
         -1 * commonpixels[2] +
@@ -188,7 +187,7 @@ int main(int argc, char **argv)
     cudaMemcpy(rImage, image, size, cudaMemcpyHostToDevice);
 
     clock_gettime(CLOCK_REALTIME, &start);
-    sobelLessNaive<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
+    sobelNaiveCache<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
     cudaDeviceSynchronize();
     clock_gettime(CLOCK_REALTIME, &end);
     double time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
