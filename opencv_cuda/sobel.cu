@@ -152,7 +152,7 @@ __global__ void sobelNaiveCache(uchar *img, uchar *output, unsigned short int co
         2 * commonpixels[4] +
         -1 * commonpixels[5] +
         1 * commonpixels[7];
-        
+
         y += -1 * commonpixels[0] +
         -2 * commonpixels[1] +
         -1 * commonpixels[2] +
@@ -160,6 +160,56 @@ __global__ void sobelNaiveCache(uchar *img, uchar *output, unsigned short int co
         2 * commonpixels[6] +
         1 * commonpixels[7];
         output[index] = (int)roundf(sqrtf(x * x + y * y));
+    }
+}
+
+__global__ void sobelMemOpt2(uchar *img, uchar *output, unsigned short int cols, unsigned short int rows)
+{
+    int index = (blockIdx.x * THREADS + threadIdx.x) * 2;
+    int currCol = index % cols;
+    int currRow = (int)truncf(index / cols);
+    bool usable = (currCol % (cols - 2)) != 0 && (currRow % (rows - 1)) != 0;
+    if (usable)
+    {
+        int xa, xb, ya, yb;
+
+        uchar fa[] = {
+            img[(-1 + currRow) * cols + (-1 + currCol)],
+            img[(-1 + currRow) * cols + (currCol)],
+            img[(-1 + currRow) * cols + (1 + currCol)],
+            img[(-1 + currRow) * cols + (2 + currCol)]
+        };
+        xa = -1 * fa[0] + fa[2];
+        xb = -1 * fa[1] + fa[3];
+
+        ya = -1 * fa[0] + -2 * fa[1] + -1 * fa[2];
+        yb = -1 * fa[1] + -2 * fa[2] + -1 * fa[3];
+
+        uchar fb[] = {
+            img[(currRow) * cols + (-1 + currCol)],
+            img[(currRow) * cols + (currCol)],
+            img[(currRow) * cols + (1 + currCol)],
+            img[(currRow) * cols + (2 + currCol)]
+        };
+
+        xa += -2 * fb[0] + 2 * fb[2];
+        xb += -2 * fb[1] + 2 * fb[3];
+
+        uchar fc[] = {
+            img[(currRow + 1) * cols + (-1 + currCol)],
+            img[(currRow + 1) * cols + (currCol)],
+            img[(currRow + 1) * cols + (1 + currCol)],
+            img[(currRow + 1) * cols + (2 + currCol)]
+        };
+
+        xa += -1 * fc[0] + fc[2];
+        xb += -1 * fc[1] + fc[3];
+
+        ya += 1 * fc[0] + 2 * fc[1] + 1 * fc[2];
+        yb += 1 * fc[1] + 2 * fc[2] + 1 * fc[3];
+
+        output[index] = (int)roundf(sqrtf(xa * xa + ya * ya));
+        output[index + 1] = (int)roundf(sqrtf(xb * xb + yb * yb));
     }
 }
 
@@ -172,7 +222,8 @@ int main(int argc, char **argv)
     const unsigned short int cols = orig.cols;
     const unsigned short int rows = orig.rows;
     const unsigned int size = cols * rows * sizeof(char);
-    const unsigned int blocks = (unsigned int)ceil((cols * rows) / THREADS);
+    // const unsigned int blocks = (unsigned int)ceil(((cols) * rows) / THREADS);
+    const unsigned int blocks = (unsigned int)ceil(((cols / 2) * rows) / THREADS);
     uchar *rImage, *rOutput;
 
     auto image = (uchar *)malloc(size);
@@ -187,7 +238,7 @@ int main(int argc, char **argv)
     cudaMemcpy(rImage, image, size, cudaMemcpyHostToDevice);
 
     clock_gettime(CLOCK_REALTIME, &start);
-    sobelNaiveCache<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
+    sobelMemOpt2<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
     cudaDeviceSynchronize();
     clock_gettime(CLOCK_REALTIME, &end);
     double time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
