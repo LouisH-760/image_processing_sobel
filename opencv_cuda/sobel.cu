@@ -109,16 +109,16 @@ __global__ void sobelLessNaive(uchar *img, uchar *output, unsigned short int col
         // auto generayed for x
         x += -1 * img[(-1 + currRow) * cols + (-1 + currCol)] +
         1 * img[(-1 + currRow) * cols + (1 + currCol)] +
-        -2 * img[(0 + currRow) * cols + (-1 + currCol)] +
-        2 * img[(0 + currRow) * cols + (1 + currCol)] +
+        -2 * img[(currRow) * cols + (-1 + currCol)] +
+        2 * img[(currRow) * cols + (1 + currCol)] +
         -1 * img[(1 + currRow) * cols + (-1 + currCol)] +
         1 * img[(1 + currRow) * cols + (1 + currCol)];
         // auto generayed for y
         y += -1 * img[(-1 + currRow) * cols + (-1 + currCol)] +
-        -2 * img[(-1 + currRow) * cols + (0 + currCol)] +
+        -2 * img[(-1 + currRow) * cols + (currCol)] +
         -1 * img[(-1 + currRow) * cols + (1 + currCol)] +
         1 * img[(1 + currRow) * cols + (-1 + currCol)] +
-        2 * img[(1 + currRow) * cols + (0 + currCol)] +
+        2 * img[(1 + currRow) * cols + (currCol)] +
         1 * img[(1 + currRow) * cols + (1 + currCol)];
         output[index] = (int)roundf(sqrtf(x * x + y * y));
     }
