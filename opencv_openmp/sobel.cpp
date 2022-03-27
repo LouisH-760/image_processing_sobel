@@ -44,39 +44,31 @@ Mat loadImage(int argc, char** argv) {
 
 int main(int argc, char** argv ) {
     struct timespec start, end;
-    int xsob[3][3] = {
-        {-1, 0, 1},
-        {-2, 0, 2},
-        {-1, 0, 1}
-    };
-
-    int ysob[3][3] = {
-        {-1, -2, -1},
-        {0, 0, 0},
-        {1, 2, 1}
-    };
 
     Mat orig = loadImage(argc, argv);
     Mat out(orig.rows, orig.cols, CV_8UC1);
-    unsigned short int result, mx, my;
     int ver, hor;
 
     clock_gettime(CLOCK_REALTIME, &start);
-    #pragma omp parallel for private(result, mx, my, ver, hor) 
+    //
+    // , (int) orig.rows*orig.cols/4
+    // schedule(dynamic, (orig.rows-1)/4)
+    #pragma omp parallel for private(ver, hor) schedule(guided)
     for(auto row = 1; row < orig.rows - 1; row++) {
         for(auto col = 1; col < orig.cols - 1; col++) {
-            ver = 0;
-            hor = 0;
-            for(auto x = 0; x < 3; x++) {
-                for(auto y = 0; y < 3; y++) {
-                    mx = col - 1 + x;
-                    my = row - 1 + y;
-                    ver += xsob[x][y] * (int) orig.at<uchar>(my, mx);
-                    hor += ysob[x][y] * (int) orig.at<uchar>(my, mx);
-                }
-            }
-            result = (unsigned short int) round(sqrt(ver * ver + hor * hor));
-            out.at<uchar>(row, col) = (uchar) result;
+            ver = -1 * (int) orig.at<uchar>(row-1, col-1)
+                +  1 * (int) orig.at<uchar>(row+1, col-1)
+                + -2 * (int) orig.at<uchar>(row-1, col)
+                +  2 * (int) orig.at<uchar>(row+1, col)
+                + -1 * (int) orig.at<uchar>(row-1, col+1)
+                +  1 * (int) orig.at<uchar>(row+1, col+1);
+            hor = -1 * (int) orig.at<uchar>(row-1, col-1)
+                + -2 * (int) orig.at<uchar>(row, col-1)
+                + -1 * (int) orig.at<uchar>(row+1, col-1)
+                +  1 * (int) orig.at<uchar>(row-1, col+1)
+                +  2 * (int) orig.at<uchar>(row, col+1)
+                +  1 * (int) orig.at<uchar>(row+1, col+1);
+            out.at<uchar>(row, col) = (uchar) round(sqrt(ver * ver + hor * hor));
         }
     }
     //

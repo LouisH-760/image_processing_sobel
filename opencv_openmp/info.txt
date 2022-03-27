@@ -13,19 +13,25 @@ Sobel function exec time: 665539.000000 microseconds (665.539000 milliseconds)
     - 1 pragma omp for (2nd loop)
 Sobel function exec time: 709389.000000 microseconds (709.389000 milliseconds)
     - pragma omp for on 1st loop with private()
-Sobel function exec time: 408388.000000 microseconds (408.388000 milliseconds) !!!
+Sobel function exec time: 408388.000000 microseconds (408.388000 milliseconds)
 Sobel function exec time: 401973.000000 microseconds (401.973000 milliseconds) !!!
     - same but on 2nd loop
 Sobel function exec time: 450364.000000 microseconds (450.364000 milliseconds)
 Sobel function exec time: 443923.000000 microseconds (443.923000 milliseconds)
     - 2 pragma omp for with private on 2nd loop
-Sobel function exec time: 398645.000000 microseconds (398.645000 milliseconds) !!!
+Sobel function exec time: 398645.000000 microseconds (398.645000 milliseconds)
     - same but private on 1st loop
 Sobel function exec time: 480343.000000 microseconds (480.343000 milliseconds)
     - private on 1st with schedule(dynamic)
 Sobel function exec time: 398862.000000 microseconds (398.862000 milliseconds) !!!
     - with guided
 Sobel function exec time: 400814.000000 microseconds (400.814000 milliseconds)
+    - precalculing inner for and operations:
+Sobel function exec time: 207476.000000 microseconds (207.476000 milliseconds) !!!
+(247 milliseconds when pragma omp for at 2nd for)
+    - without result variable
+Sobel function exec time: 205677.000000 microseconds (205.677000 milliseconds)
+Sobel function exec time: 202129.000000 microseconds (202.129000 milliseconds)
 
 no reduction() because it isn't a simple operation: reduction(+ : temp)
 shared(xsob, ysob) seems to be a bit slower
