@@ -51,8 +51,6 @@ int main(int argc, char** argv ) {
 
     clock_gettime(CLOCK_REALTIME, &start);
     //
-    // , (int) orig.rows*orig.cols/4
-    // schedule(dynamic, (orig.rows-1)/4)
     #pragma omp parallel for private(ver, hor) schedule(guided)
     for(auto row = 1; row < orig.rows - 1; row++) {
         for(auto col = 1; col < orig.cols - 1; col++) {
