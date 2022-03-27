@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <omp.h>
+#include <sys/time.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+
+#include <omp.h>
 
 #define WINDOWFLAGS WINDOW_NORMAL|WINDOW_KEEPRATIO|WINDOW_GUI_EXPANDED
 #define WNAME "Sobel"
@@ -40,6 +43,7 @@ Mat loadImage(int argc, char** argv) {
 }
 
 int main(int argc, char** argv ) {
+    struct timespec start, end;
     int xsob[3][3] = {
         {-1, 0, 1},
         {-2, 0, 2},
@@ -57,7 +61,8 @@ int main(int argc, char** argv ) {
     unsigned short int result, mx, my;
     int ver, hor;
 
-    // TODO: Paralellize! Tune!
+    clock_gettime(CLOCK_REALTIME, &start);
+    #pragma omp parallel for private(result, mx, my, ver, hor) 
     for(auto row = 1; row < orig.rows - 1; row++) {
         for(auto col = 1; col < orig.cols - 1; col++) {
             ver = 0;
@@ -74,6 +79,12 @@ int main(int argc, char** argv ) {
             out.at<uchar>(row, col) = (uchar) result;
         }
     }
+    //
+    clock_gettime(CLOCK_REALTIME, &end);
+    double time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+    double ms = time / 1000;
+    printf("Sobel function exec time: %f microseconds (%f milliseconds)\n", time, ms);
+    //
     showAndSave(out);
     return 0;
 }
