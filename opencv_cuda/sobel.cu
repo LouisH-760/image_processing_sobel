@@ -213,6 +213,74 @@ __global__ void sobelMemOpt2(uchar *img, uchar *output, unsigned short int cols,
     }
 }
 
+__global__ void sobelMemOpt4(uchar *img, uchar *output, unsigned short int cols, unsigned short int rows)
+{
+    int index = (blockIdx.x * THREADS + threadIdx.x) * 4;
+    int currCol = index % cols;
+    int currRow = (int)truncf(index / cols);
+    bool usable = (currCol % (cols - 4)) != 0 && (currRow % (rows - 1)) != 0;
+    if (usable)
+    {
+        int xa, xb, xc, xd, ya, yb, yc, yd;
+
+        uchar fa[] = {
+            img[(-1 + currRow) * cols + (-1 + currCol)],
+            img[(-1 + currRow) * cols + (currCol)],
+            img[(-1 + currRow) * cols + (1 + currCol)],
+            img[(-1 + currRow) * cols + (2 + currCol)],
+            img[(-1 + currRow) * cols + (3 + currCol)],
+            img[(-1 + currRow) * cols + (4 + currCol)]
+        };
+        xa = -1 * fa[0] + fa[2];
+        xb = -1 * fa[1] + fa[3];
+        xc = -1 * fa[2] + fa[4];
+        xd = -1 * fa[3] + fa[5];
+
+        ya = -1 * fa[0] + -2 * fa[1] + -1 * fa[2];
+        yb = -1 * fa[1] + -2 * fa[2] + -1 * fa[3];
+        yc = -1 * fa[2] + -2 * fa[3] + -1 * fa[4];
+        yd = -1 * fa[3] + -2 * fa[4] + -1 * fa[5];
+
+        uchar fb[] = {
+            img[(currRow) * cols + (-1 + currCol)],
+            img[(currRow) * cols + (currCol)],
+            img[(currRow) * cols + (1 + currCol)],
+            img[(currRow) * cols + (2 + currCol)],
+            img[(currRow) * cols + (3 + currCol)],
+            img[(currRow) * cols + (4 + currCol)]
+        };
+
+        xa += -2 * fb[0] + 2 * fb[2];
+        xb += -2 * fb[1] + 2 * fb[3];
+        xc += -2 * fb[2] + 2 * fb[4];
+        xd += -2 * fb[3] + 2 * fb[5];
+
+        uchar fc[] = {
+            img[(currRow + 1) * cols + (-1 + currCol)],
+            img[(currRow + 1) * cols + (currCol)],
+            img[(currRow + 1) * cols + (1 + currCol)],
+            img[(currRow + 1) * cols + (2 + currCol)],
+            img[(currRow + 1) * cols + (3 + currCol)],
+            img[(currRow + 1) * cols + (4 + currCol)]
+        };
+
+        xa += -1 * fc[0] + fc[2];
+        xb += -1 * fc[1] + fc[3];
+        xc += -1 * fc[2] + fc[4];
+        xd += -1 * fc[3] + fc[5];
+
+        ya += 1 * fc[0] + 2 * fc[1] + 1 * fc[2];
+        yb += 1 * fc[1] + 2 * fc[2] + 1 * fc[3];
+        yc += 1 * fc[2] + 2 * fc[3] + 1 * fc[4];
+        yd += 1 * fc[3] + 2 * fc[4] + 1 * fc[5];
+
+        output[index] = (int)roundf(sqrtf(xa * xa + ya * ya));
+        output[index + 1] = (int)roundf(sqrtf(xb * xb + yb * yb));
+        output[index + 2] = (int)roundf(sqrtf(xc * xc + yc * yc));
+        output[index + 3] = (int)roundf(sqrtf(xd * xd + yd * yd));
+    }
+}
+
 int main(int argc, char **argv)
 {
     struct timespec start, end;
@@ -222,8 +290,9 @@ int main(int argc, char **argv)
     const unsigned short int cols = orig.cols;
     const unsigned short int rows = orig.rows;
     const unsigned int size = cols * rows * sizeof(char);
-    // const unsigned int blocks = (unsigned int)ceil(((cols) * rows) / THREADS);
-    const unsigned int blocks = (unsigned int)ceil(((cols / 2) * rows) / THREADS);
+    const unsigned int blocks = (unsigned int)ceil(((cols) * rows) / THREADS);
+    const unsigned int blocks2 = (unsigned int)ceil(((cols / 2) * rows) / THREADS);
+    const unsigned int blocks4 = (unsigned int)ceil(((cols / 4) * rows) / THREADS);
     uchar *rImage, *rOutput;
 
     auto image = (uchar *)malloc(size);
@@ -238,7 +307,7 @@ int main(int argc, char **argv)
     cudaMemcpy(rImage, image, size, cudaMemcpyHostToDevice);
 
     clock_gettime(CLOCK_REALTIME, &start);
-    sobelMemOpt2<<<blocks, THREADS>>>(rImage, rOutput, cols, rows);
+    sobelMemOpt4<<<blocks4, THREADS>>>(rImage, rOutput, cols, rows);
     cudaDeviceSynchronize();
     clock_gettime(CLOCK_REALTIME, &end);
     double time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
