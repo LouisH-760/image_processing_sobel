@@ -1,6 +1,7 @@
 from math import sqrt
 from helper import dims, init2DArray, storefile, loadfile
 import numpy as np
+from time import time
 
 SOBELX = [
   [-1, 0, 1],
@@ -32,5 +33,9 @@ if __name__ == "__main__":
   # start from root of the repository
   file = "./test_data/huge.jpg"
   img = loadfile(file)
+  b = time()
   out = sobel(img)
+  a = time()
+  tot = (a - b) * 1000
+  print(f"time: {tot}ms")
   storefile("out.png", out)
