@@ -10,7 +10,7 @@
 #define OUTNAME "result.png"
 #define DISPLAY_SCALE 0.3
 
-#define THREADS 1024
+#define THREADS 128
 
 using namespace cv;
 
@@ -235,7 +235,6 @@ __global__ void sobelMemOpt4(uchar *img, uchar *output, unsigned short int cols,
         xb = -1 * fa[1] + fa[3];
         xc = -1 * fa[2] + fa[4];
         xd = -1 * fa[3] + fa[5];
-
         ya = -1 * fa[0] + -2 * fa[1] + -1 * fa[2];
         yb = -1 * fa[1] + -2 * fa[2] + -1 * fa[3];
         yc = -1 * fa[2] + -2 * fa[3] + -1 * fa[4];
@@ -268,7 +267,6 @@ __global__ void sobelMemOpt4(uchar *img, uchar *output, unsigned short int cols,
         xb += -1 * fc[1] + fc[3];
         xc += -1 * fc[2] + fc[4];
         xd += -1 * fc[3] + fc[5];
-
         ya += 1 * fc[0] + 2 * fc[1] + 1 * fc[2];
         yb += 1 * fc[1] + 2 * fc[2] + 1 * fc[3];
         yc += 1 * fc[2] + 2 * fc[3] + 1 * fc[4];
