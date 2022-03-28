@@ -5,6 +5,7 @@ CFLAGS = $(OPENCV) $(GCC_OPTIONS) $(FILE)$(EXT) -o $(FILE)
 DEBUG_FLAG = -g
 FILE = sobel
 TEST_IMG = ../test_data/huge.jpg
+# TEST_IMG = ../test_data/mohamed-elsayed-Red-Panda.jpg # vertical image
 DEBUGGER = gdb
 DEBUGGER_ARGS = --args $(FILE) $(TEST_IMG)
 EXT = .cu
